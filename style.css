@@ -1,0 +1,154 @@
+body {
+    font-family: 'Arial', sans-serif;  /* Основной шрифт */
+    margin: 0;                         /* Убирает отступы по умолчанию */
+    padding: 0;                        /* Убирает внутренние отступы */
+    background-color: #f5f5f5;         /* Светло-серый фон страницы */
+    color: #333;                       /* Основной цвет текста (темно-серый) */
+}
+
+.container {
+    max-width: 1000px;  /* Ограничивает ширину контента */
+    margin: 0 auto;     /* Центрирует контейнер по горизонтали */
+    padding: 20px;      /* Внутренние отступы */
+}
+
+h1 {
+    text-align: center;   /* Выравнивание по центру */
+    color: #2c3e50;      /* Темно-синий цвет */
+    margin-bottom: 30px;  /* Отступ снизу */
+}
+
+.search-container {
+    display: flex;          /* Гибкий контейнер для inline-элементов */
+    justify-content: center; /* Центрирование содержимого */
+    margin-bottom: 30px;    /* Отступ снизу */
+}
+
+#city-input {
+    padding: 10px 15px;     /* Внутренние отступы */
+    font-size: 16px;        /* Размер шрифта */
+    border: 1px solid #ddd; /* Серая граница */
+    border-radius: 4px 0 0 4px; /* Закругление слева */
+    width: 300px;           /* Ширина поля */
+    outline: none;          /* Убирает обводку при фокусе */
+}
+
+#search-btn {
+    padding: 10px 20px;     /* Внутренние отступы */
+    background-color: #3498db; /* Голубая кнопка */
+    color: white;          /* Белый текст */
+    border: none;          /* Без границы */
+    border-radius: 0 4px 4px 0; /* Закругление справа */
+    cursor: pointer;       /* Курсор-указатель */
+    font-size: 16px;       /* Размер шрифта */
+    transition: background-color 0.3s; /* Плавное изменение цвета */
+}
+
+#search-btn:hover {
+    background-color: #2980b9; /* Темно-голубой при наведении */
+}
+
+.current-weather {
+    background-color: white;       /* Белый фон */
+    border-radius: 8px;           /* Закругленные углы */
+    padding: 20px;                /* Внутренние отступы */
+    margin-bottom: 30px;          /* Отступ снизу */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Тень */
+    display: flex;                /* Гибкий контейнер */
+    flex-direction: column;       /* Вертикальное расположение */
+    align-items: center;          /* Центрирование по горизонтали */
+}
+
+.forecast-container {
+    display: flex;          /* Гибкий контейнер */
+    flex-direction: column; /* Вертикальное расположение */
+    gap: 30px;             /* Расстояние между элементами */
+}
+
+#temperature-chart {
+    background-color: white; /* Белый фон */
+    border-radius: 8px;      /* Закругленные углы */
+    padding: 20px;          /* Внутренние отступы */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Тень */
+}
+
+.daily-forecast {
+    display: flex;          /* Гибкий контейнер */
+    flex-wrap: wrap;        /* Перенос на новую строку */
+    gap: 20px;             /* Расстояние между карточками */
+    justify-content: space-between; /* Равномерное распределение */
+}
+
+.weather-card {
+    background-color: white; /* Белый фон */
+    border-radius: 8px;      /* Закругленные углы */
+    padding: 15px;          /* Внутренние отступы */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Тень */
+    flex: 1;                /* Гибкая ширина */
+    min-width: 150px;       /* Минимальная ширина */
+    text-align: center;     /* Центрирование текста */
+}
+
+.weather-icon {
+    width: 50px;           /* Размер иконки */
+    height: 50px;          
+    margin: 10px auto;     /* Отступы + центрирование */
+    display: block;        /* Блочное отображение */
+}
+
+.temp-day {
+    color: #e74c3c;        /* Красный для дневной температуры */
+    font-weight: bold;     /* Жирный шрифт */
+}
+
+.temp-night {
+    color: #3498db;        /* Синий для ночной температуры */
+    font-weight: bold;     
+}
+
+.date {
+    font-weight: bold;     /* Жирный шрифт для даты */
+    margin-bottom: 10px;   /* Отступ снизу */
+}
+
+@media (max-width: 768px) {
+    .daily-forecast {
+        flex-direction: column; /* Вертикальное расположение на мобильных */
+    }
+    
+    .weather-card {
+        min-width: 100%; /* На всю ширину экрана */
+    }
+}
+
+.current-temp {
+    font-size: 36px;       /* Крупный шрифт для температуры */
+    font-weight: bold;     /* Жирное начертание */
+    margin: 10px 0;        /* Отступы */
+}
+
+.current-description {
+    text-transform: capitalize; /* Первая буква заглавная */
+    margin-bottom: 10px;   /* Отступ снизу */
+}
+
+.current-details {
+    display: flex;         /* Гибкий контейнер */
+    gap: 20px;            /* Расстояние между элементами */
+    margin-top: 10px;     /* Отступ сверху */
+}
+
+.detail-item {
+    display: flex;         /* Гибкий контейнер */
+    flex-direction: column; /* Вертикальное расположение */
+    align-items: center;   /* Центрирование */
+}
+
+.detail-value {
+    font-weight: bold;     /* Жирный шрифт для значений */
+}
+
+.detail-label {
+    font-size: 12px;       /* Мелкий шрифт */
+    color: #7f8c8d;       /* Серый цвет */
+}
