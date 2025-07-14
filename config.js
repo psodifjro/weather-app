@@ -1,1 +1,2 @@
-const WEATHER_API_KEY = '92bab7b893f040b79f8132542251407'
+const YANDEX_API_KEY = '8272aaf2-9941-4bb9-83b4-9d060dad6305';
+const YANDEX_API_URL = 'https://api.weather.yandex.ru/v2/forecast';
