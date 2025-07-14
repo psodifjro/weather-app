@@ -1,0 +1,31 @@
+<!DOCTYPE html>  <!-- Объявление типа документа как HTML5 -->
+<html lang="ru">  <!-- Корневой элемент HTML с указанием языка (русский) -->
+<head>  <!-- Секция метаданных документа -->
+    <meta charset="UTF-8">  <!-- Указание кодировки UTF-8 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  <!-- Настройка viewport для мобильных устройств -->
+    <title>Прогноз погоды</title>  <!-- Заголовок страницы в браузере -->
+    <link rel="stylesheet" href="style.css">  <!-- Подключение CSS-файла -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  <!-- Подключение библиотеки Chart.js для графиков -->
+</head>
+<body>  <!-- Тело документа (видимая часть страницы) -->
+    <div class="container">  <!-- Основной контейнер для центрирования контента -->
+        <h1>Прогноз погоды</h1>  <!-- Главный заголовок страницы -->   
+        <div class="search-container">  <!-- Контейнер для элементов поиска -->
+            <input type="text" id="city-input" placeholder="Введите город">  <!-- Поле ввода города -->
+            <button id="search-btn">Поиск</button>  <!-- Кнопка поиска -->
+        </div>        
+        <div class="current-weather" id="current-weather">  <!-- Блок для отображения текущей погоды -->
+            <!-- Текущая погода будет динамически загружена сюда через JavaScript -->
+        </div>    
+        <div class="forecast-container">  <!-- Контейнер для прогноза погоды -->
+            <canvas id="temperature-chart"></canvas>  <!-- Холст для отрисовки графика температур -->
+            <div class="daily-forecast" id="daily-forecast">  <!-- Блок для 5-дневного прогноза -->
+                <!-- Прогноз будет динамически загружен сюда через JavaScript -->
+            </div>
+        </div>
+    </div>
+    <!-- Подключение JavaScript файлов -->
+    <script src="config.js"></script>  <!-- Файл с API ключом (не включается в публичный репозиторий) -->
+    <script src="script.js"></script>  <!-- Основной файл с логикой приложения -->
+</body>
+</html>
