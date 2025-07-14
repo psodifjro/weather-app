@@ -1,1 +1,1 @@
-const YANDEX_API_KEY = 'YOUR_API_KEY';
+const WEATHER_API_KEY = 'ваш_api_ключ_от_weatherapi.com';
