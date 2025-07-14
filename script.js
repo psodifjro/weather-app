@@ -19,44 +19,55 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Получение координат города (упрощенная версия)
     async function fetchCoords(city) {
-        const cities = {
-            'москва': { lat: 55.7558, lon: 37.6173 },
-            'санкт-петербург': { lat: 59.9343, lon: 30.3351 },
-            'новосибирск': { lat: 55.0084, lon: 82.9357 },
-            'казань': { lat: 55.7963, lon: 49.1088 },
-            'екатеринбург': { lat: 56.8389, lon: 60.6057 }
+    try {
+        // Используем API Яндекс.Геокодера (требуется отдельный ключ)
+        const response = await fetch(
+            `https://geocode-maps.yandex.ru/1.x/?apikey=${YANDEX_GEOCODER_KEY}&format=json&geocode=${encodeURIComponent(city)}`
+        );
+        const data = await response.json();
+        
+        const feature = data.response.GeoObjectCollection.featureMember[0]?.GeoObject;
+        if (!feature) throw new Error('Город не найден');
+        
+        const [lon, lat] = feature.Point.pos.split(' ');
+        return { 
+            lat: parseFloat(lat), 
+            lon: parseFloat(lon),
+            address: feature.name // Сохраняем корректное название города
         };
-        return cities[city.toLowerCase()] || currentCoords;
+    } catch (error) {
+        console.error('Ошибка геокодирования:', error);
+        alert(`Не удалось найти город "${city}". Попробуйте уточнить название.`);
+        return null;
     }
+}
 
     // Загрузка данных о погоде
     async function fetchWeather(city) {
-        try {
-            currentCoords = await fetchCoords(city);
-            currentCity = city;
-            
-            const response = await fetch(
-                `${YANDEX_API_URL}?lat=${currentCoords.lat}&lon=${currentCoords.lon}&limit=5&lang=ru_RU&hours=false&extra=false`,
-                {
-                    headers: { 'X-Yandex-API-Key': YANDEX_API_KEY }
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(`Ошибка API: ${response.status}`);
+    try {
+        const coords = await fetchCoords(city);
+        if (!coords) return;
+        
+        currentCoords = coords;
+        currentCity = coords.address || city; // Используем название от геокодера
+        
+        const response = await fetch(
+            `${YANDEX_API_URL}?lat=${currentCoords.lat}&lon=${currentCoords.lon}&limit=5&lang=ru_RU`,
+            {
+                headers: { 'X-Yandex-API-Key': YANDEX_API_KEY }
             }
-
-            const data = await response.json();
-            console.log('Данные от API:', data); // Для отладки
-            
-            displayCurrentWeather(data);
-            displayForecast(data);
-            createTemperatureChart(data);
-        } catch (error) {
-            console.error('Ошибка при загрузке данных:', error);
-            alert(`Ошибка: ${error.message}. Проверьте название города и API ключ.`);
-        }
+        );
+        
+        if (!response.ok) throw new Error(`Ошибка API: ${response.status}`);
+        
+        const data = await response.json();
+        updateWeatherData(data);
+        
+    } catch (error) {
+        console.error('Ошибка:', error);
+        alert(error.message);
     }
+}
 
     // Отображение текущей погоды
     function displayCurrentWeather(data) {
@@ -197,22 +208,33 @@ document.addEventListener('DOMContentLoaded', function() {
         return string.charAt(0).toUpperCase() + string.slice(1);
     }
 
-    // Обработчики событий
-    searchBtn.addEventListener('click', () => {
-        const city = cityInput.value.trim();
-        if (city) {
-            fetchWeather(city);
-        }
-    });
+    function updateWeatherData(data) {
+    displayCurrentWeather(data);
+    displayForecast(data);
+    
+    // Полностью пересоздаём график
+    if (temperatureChart) {
+        temperatureChart.destroy();
+    }
+    createTemperatureChart(data);
+}
 
-    cityInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            const city = cityInput.value.trim();
-            if (city) {
-                fetchWeather(city);
-            }
+    // Обработчики событий
+   searchBtn.addEventListener('click', async () => {
+    const city = cityInput.value.trim();
+    if (city && city !== currentCity) {
+        await fetchWeather(city);
+    }
+});
+
+cityInput.addEventListener('keypress', async (e) => {
+    if (e.key === 'Enter') {
+        const city = cityInput.value.trim();
+        if (city && city !== currentCity) {
+            await fetchWeather(city);
         }
-    });
+    }
+});
 
     // Инициализация
     fetchWeather(currentCity);
