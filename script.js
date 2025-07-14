@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let temperatureChart = null; // Здесь будет храниться экземпляр графика
 
     // Загружаем погоду для Москвы по умолчанию
-    loadWeather('Moscow');
+    loadWeather('Москва');
 
     // Обработчик клика по кнопке поиска
     searchBtn.addEventListener('click', function() {
@@ -35,89 +35,99 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {string} city - Название города
      */
     function loadWeather(city) {
-        fetchWeatherData(city)
+        fetchYandexWeather(city)
             .then(data => {
                 // Обновляем все части интерфейса
-                updateCurrentWeather(data.current);
-                updateDailyForecast(data.daily);
-                updateTemperatureChart(data.daily);
+                updateCurrentWeather(data);
+                updateDailyForecast(data.forecasts);
+                updateTemperatureChart(data.forecasts);
             })
             .catch(error => {
-                console.error('Error fetching weather data:', error);
-                alert('Не удалось получить данные о погоде. Проверьте название города и попробуйте снова.');
+                console.error('Yandex Weather Error:', error);
+                alert('Ошибка: ' + error.message);
             });
     }
 
     /**
-     * Получение данных о погоде с API OpenWeatherMap
+     * Получение данных о погоде с Яндекс.Погоды API
      * @param {string} city - Название города
      * @returns {Promise} - Обещание с данными о погоде
      */
-    function fetchWeatherData(city) {
-        // Первый запрос - получаем текущую погоду и координаты города
-        return fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&lang=ru`)
-            .then(response => {
-                if (!response.ok) { // Если ответ не успешный
-                    throw new Error('City not found'); // Генерируем ошибку
-                }
-                return response.json(); // Парсим JSON ответа
-            })
-            .then(currentData => {
-                // Извлекаем координаты из ответа
-                const lat = currentData.coord.lat;
-                const lon = currentData.coord.lon;
-                
-                // Второй запрос - получаем прогноз по координатам
-                return fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,alerts&appid=${API_KEY}&units=metric&lang=ru`)
-                    .then(response => response.json())
-                    .then(forecastData => {
-                        // Объединяем данные текущей погоды и прогноза
-                        return {
-                            current: {
-                                ...currentData, // Основные данные о городе
-                                ...forecastData.current // Текущие погодные данные
-                            },
-                            daily: forecastData.daily.slice(0, 5) // Берем только 5 дней прогноза
-                        };
-                    });
+    async function fetchYandexWeather(city) {
+        try {
+            // 1. Получаем координаты города через Яндекс.Геокодер
+            const geocodeUrl = `https://geocode-maps.yandex.ru/1.x/?format=json&apikey=${YANDEX_API_KEY}&geocode=${encodeURIComponent(city)}`;
+            
+            const geoResponse = await fetch(geocodeUrl);
+            if (!geoResponse.ok) throw new Error('Город не найден');
+            
+            const geoData = await geoResponse.json();
+            
+            // Проверяем, что есть результаты геокодирования
+            if (!geoData.response.GeoObjectCollection.featureMember.length) {
+                throw new Error('Город не найден');
+            }
+            
+            // Извлекаем координаты (долгота и широта)
+            const pos = geoData.response.GeoObjectCollection.featureMember[0]
+                       .GeoObject.Point.pos.split(' ');
+            const [lon, lat] = pos; // Яндекс возвращает в порядке "долгота широта"
+
+            // 2. Запрашиваем погоду по координатам
+            const weatherUrl = `https://api.weather.yandex.ru/v2/forecast?lat=${lat}&lon=${lon}&lang=ru_RU&limit=5`;
+            
+            const weatherResponse = await fetch(weatherUrl, {
+                headers: { 'X-Yandex-API-Key': YANDEX_API_KEY }
             });
+            
+            if (!weatherResponse.ok) throw new Error('Ошибка получения данных о погоде');
+            return await weatherResponse.json();
+        } catch (error) {
+            console.error('Fetch error:', error);
+            throw new Error('Не удалось получить данные о погоде');
+        }
     }
 
     /**
      * Обновление блока текущей погоды
-     * @param {Object} data - Данные о текущей погоде
+     * @param {Object} data - Данные о текущей погоде от Яндекс.Погоды
      */
     function updateCurrentWeather(data) {
-        // Форматируем дату для отображения
-        const date = new Date(data.dt * 1000); // Конвертируем timestamp в дату
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        const formattedDate = date.toLocaleDateString('ru-RU', options);
+        const fact = data.fact; // Текущие погодные данные
         
-        // Получаем URL иконки погоды
-        const weatherIconUrl = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+        // Форматируем дату для отображения
+        const formattedDate = new Date().toLocaleDateString('ru-RU', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        
+        // Получаем URL иконки погоды от Яндекса
+        const weatherIconUrl = `https://yastatic.net/weather/i/icons/blueye/color/svg/${fact.condition}.svg`;
         
         // Генерируем HTML для блока текущей погоды
         currentWeatherElement.innerHTML = `
-            <h2>${data.name}</h2> <!-- Название города -->
+            <h2>${cityInput.value || 'Москва'}</h2> <!-- Название города -->
             <div>${formattedDate}</div> <!-- Форматированная дата -->
-            <img src="${weatherIconUrl}" alt="${data.weather[0].description}" class="weather-icon">
-            <div class="current-temp">${Math.round(data.temp)}°C</div> <!-- Температура -->
-            <div class="current-description">${data.weather[0].description}</div> <!-- Описание -->
+            <img src="${weatherIconUrl}" alt="${getYandexCondition(fact.condition)}" class="weather-icon">
+            <div class="current-temp">${fact.temp}°C</div> <!-- Температура -->
+            <div class="current-description">${getYandexCondition(fact.condition)}</div> <!-- Описание -->
             <div class="current-details">
                 <div class="detail-item">
-                    <span class="detail-value">${Math.round(data.feels_like)}°C</span>
+                    <span class="detail-value">${fact.feels_like}°C</span>
                     <span class="detail-label">Ощущается</span>
                 </div>
                 <div class="detail-item">
-                    <span class="detail-value">${data.humidity}%</span>
+                    <span class="detail-value">${fact.humidity}%</span>
                     <span class="detail-label">Влажность</span>
                 </div>
                 <div class="detail-item">
-                    <span class="detail-value">${Math.round(data.wind_speed)} м/с</span>
+                    <span class="detail-value">${fact.wind_speed} м/с</span>
                     <span class="detail-label">Ветер</span>
                 </div>
                 <div class="detail-item">
-                    <span class="detail-value">${data.pressure} hPa</span>
+                    <span class="detail-value">${fact.pressure_mm} мм рт.ст.</span>
                     <span class="detail-label">Давление</span>
                 </div>
             </div>
@@ -125,36 +135,69 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Обновление блока с прогнозом на 5 дней
-     * @param {Array} dailyData - Массив с данными прогноза
+     * Преобразует коды погодных условий Яндекса в читаемый текст
+     * @param {string} condition - Код погодного условия
+     * @returns {string} - Описание на русском
      */
-    function updateDailyForecast(dailyData) {
+    function getYandexCondition(condition) {
+        const conditions = {
+            'clear': 'ясно',
+            'partly-cloudy': 'малооблачно',
+            'cloudy': 'облачно',
+            'overcast': 'пасмурно',
+            'drizzle': 'морось',
+            'light-rain': 'небольшой дождь',
+            'rain': 'дождь',
+            'moderate-rain': 'умеренный дождь',
+            'heavy-rain': 'сильный дождь',
+            'continuous-heavy-rain': 'длительный сильный дождь',
+            'showers': 'ливень',
+            'wet-snow': 'дождь со снегом',
+            'light-snow': 'небольшой снег',
+            'snow': 'снег',
+            'snow-showers': 'снегопад',
+            'hail': 'град',
+            'thunderstorm': 'гроза',
+            'thunderstorm-with-rain': 'дождь с грозой',
+            'thunderstorm-with-hail': 'гроза с градом'
+        };
+        return conditions[condition] || condition;
+    }
+
+    /**
+     * Обновление блока с прогнозом на 5 дней
+     * @param {Array} forecasts - Массив с данными прогноза
+     */
+    function updateDailyForecast(forecasts) {
         dailyForecastElement.innerHTML = ''; // Очищаем контейнер
         
-        // Для каждого дня создаем карточку
-        dailyData.forEach(day => {
+        // Для каждого дня создаем карточку (максимум 5 дней)
+        forecasts.slice(0, 5).forEach(day => {
             // Форматируем дату дня
-            const date = new Date(day.dt * 1000);
-            const options = { weekday: 'short', day: 'numeric', month: 'short' };
-            const formattedDate = date.toLocaleDateString('ru-RU', options);
+            const date = new Date(day.date);
+            const formattedDate = date.toLocaleDateString('ru-RU', { 
+                weekday: 'short', 
+                day: 'numeric', 
+                month: 'short' 
+            });
             
-            // Получаем URL иконки погоды
-            const weatherIconUrl = `https://openweathermap.org/img/wn/${day.weather[0].icon}.png`;
+            // Получаем URL иконки погоды для дневного времени
+            const weatherIconUrl = `https://yastatic.net/weather/i/icons/blueye/color/svg/${day.parts.day.condition}.svg`;
             
             // Создаем элемент карточки
             const card = document.createElement('div');
             card.className = 'weather-card';
             card.innerHTML = `
                 <div class="date">${formattedDate}</div> <!-- Дата -->
-                <img src="${weatherIconUrl}" alt="${day.weather[0].description}" class="weather-icon">
-                <div class="current-description">${day.weather[0].description}</div> <!-- Описание -->
+                <img src="${weatherIconUrl}" alt="${getYandexCondition(day.parts.day.condition)}" class="weather-icon">
+                <div class="current-description">${getYandexCondition(day.parts.day.condition)}</div> <!-- Описание -->
                 <div>
-                    <span class="temp-day">${Math.round(day.temp.day)}°</span> / <!-- Дневная температура -->
-                    <span class="temp-night">${Math.round(day.temp.night)}°</span> <!-- Ночная температура -->
+                    <span class="temp-day">${day.parts.day.temp_avg}°</span> / <!-- Дневная температура -->
+                    <span class="temp-night">${day.parts.night.temp_avg}°</span> <!-- Ночная температура -->
                 </div>
                 <div style="margin-top: 10px;">
-                    <span>💧 ${day.humidity}%</span> | <!-- Влажность -->
-                    <span>🌬️ ${Math.round(day.wind_speed)} м/с</span> <!-- Скорость ветра -->
+                    <span>💧 ${day.parts.day.humidity}%</span> | <!-- Влажность -->
+                    <span>🌬️ ${day.parts.day.wind_speed} м/с</span> <!-- Скорость ветра -->
                 </div>
             `;
             
@@ -165,18 +208,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     /**
      * Обновление графика температур
-     * @param {Array} dailyData - Массив с данными прогноза
+     * @param {Array} forecasts - Массив с данными прогноза
      */
-    function updateTemperatureChart(dailyData) {
+    function updateTemperatureChart(forecasts) {
         // Подготавливаем подписи для оси X (дни недели)
-        const labels = dailyData.map(day => {
-            const date = new Date(day.dt * 1000);
+        const labels = forecasts.slice(0, 5).map(day => {
+            const date = new Date(day.date);
             return date.toLocaleDateString('ru-RU', { weekday: 'short' });
         });
         
         // Получаем данные для графика
-        const dayTemps = dailyData.map(day => Math.round(day.temp.day)); // Дневные температуры
-        const nightTemps = dailyData.map(day => Math.round(day.temp.night)); // Ночные температуры
+        const dayTemps = forecasts.slice(0, 5).map(day => day.parts.day.temp_avg); // Дневные температуры
+        const nightTemps = forecasts.slice(0, 5).map(day => day.parts.night.temp_avg); // Ночные температуры
         
         // Если график уже существует - уничтожаем его
         if (temperatureChart) {
