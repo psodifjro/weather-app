@@ -17,10 +17,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentCity = 'Москва';
     let currentCoords = { lat: 55.7558, lon: 37.6173 }; // Координаты Москвы по умолчанию
 
-    // Получение координат города (упрощенная версия)
+    // Получение координат города (
     async function fetchCoords(city) {
     try {
-        // Используем API Яндекс.Геокодера (требуется отдельный ключ)
+        // Используем API Яндекс.Геокодера
         const response = await fetch(
             `https://geocode-maps.yandex.ru/1.x/?apikey=${YANDEX_GEOCODER_KEY}&format=json&geocode=${encodeURIComponent(city)}`
         );
